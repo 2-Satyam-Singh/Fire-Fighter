@@ -1,0 +1,95 @@
+#include <Servo.h>
+
+Servo nozzle;
+
+const int ir1 = A0, ir2 = A1, ir3 = A2;
+
+const int pumpPin = 2;
+//L293D
+//Motor A
+const int motorPin1  = 5;  // Pin 14 of L293
+const int motorPin2  = 6;  // Pin 10 of L293
+//Motor B
+const int motorPin3  = 10; // Pin  7 of L293
+const int motorPin4  = 9;  // Pin  2 of L293
+
+//This will run only one time.
+void setup(){
+  pinMode(pumpPin,OUTPUT);
+  
+  nozzle.attach(12);
+  nozzle.write(90);
+  
+  pinMode(ir1,INPUT);
+  pinMode(ir2,INPUT);
+  pinMode(ir3,INPUT);
+  Serial.begin(9600);
+  
+  //Set pins as outputs
+  pinMode(motorPin1, OUTPUT);
+  pinMode(motorPin2, OUTPUT);
+  pinMode(motorPin3, OUTPUT);
+  pinMode(motorPin4, OUTPUT);
+}
+
+void move(char direction){
+  if(direction == 'f'){
+    digitalWrite(motorPin1, HIGH);
+    digitalWrite(motorPin2, LOW);
+    digitalWrite(motorPin3, HIGH);
+    digitalWrite(motorPin4, LOW);
+  }
+  else if(direction == 'l'){
+    digitalWrite(motorPin1, LOW);
+    digitalWrite(motorPin2, HIGH);
+    digitalWrite(motorPin3, HIGH);
+    digitalWrite(motorPin4, LOW);
+  }
+  else if(direction == 'r'){
+    digitalWrite(motorPin1, HIGH);
+    digitalWrite(motorPin2, LOW);
+    digitalWrite(motorPin3, LOW);
+    digitalWrite(motorPin4, HIGH);
+  }
+}
+
+void search_for_fire(){
+  // keep moving straight or set a path
+  move('f');
+}
+
+void loop(){
+  int left = analogRead(ir1);
+  int front = analogRead(ir2);
+  int right = analogRead(ir3);
+  
+  left = front = right = 10;  // Delete this
+  front = 500;
+  int th = 100; // threshold for fire
+  if(left > th || front > th || right > th){
+    if(left > front){
+      if(left > 2 * front)
+        move('l');
+      else{
+        nozzle.write(135);
+        digitalWrite(pumpPin, HIGH);
+      }
+    }
+    else if(right > front){
+      if(right > 2 * front)
+        move('r');
+      else{
+        nozzle.write(45);
+        digitalWrite(pumpPin, HIGH);
+      }
+    }
+    else if(front >= left && front >= right){
+      nozzle.write(90);
+      digitalWrite(pumpPin, HIGH);
+    }
+  }
+  else{
+    digitalWrite(pumpPin, LOW);
+    search_for_fire();
+  }
+}
